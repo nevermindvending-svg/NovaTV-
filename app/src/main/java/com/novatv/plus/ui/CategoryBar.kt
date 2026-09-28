@@ -44,7 +44,7 @@ fun CategoryBar(
     LazyRow(
         modifier = modifier
             .fillMaxWidth()
-            .background(OledBlack)
+            .background(BackgroundBlack)
             .padding(vertical = 4.dp),
         contentPadding = PaddingValues(horizontal = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -70,31 +70,31 @@ fun CategoryChip(
     var isFocused by remember { mutableStateOf(false) }
 
     val backgroundColor = when {
-        isFocused -> Color(0xFF003038)
-        isSelected -> Color(0xFF0D1B22)
-        else -> SurfaceDark11
+        isFocused -> SurfaceGraphite28
+        isSelected -> SurfaceGraphite1E
+        else -> SurfaceGraphite0D
     }
 
     val borderColor = when {
-        isFocused -> CyanAccent
-        isSelected -> CyanAccentDark
-        else -> SurfaceBorderDark
+        isFocused -> BorderFocused
+        isSelected -> BorderSubtleHighlight
+        else -> BorderSubtle
     }
 
     val textColor = when {
-        isFocused -> CyanAccent
-        isSelected -> CyanAccent
-        else -> TextSecondary
+        isFocused -> TextPrimaryWhite
+        isSelected -> TextPrimaryWhite
+        else -> TextSecondarySilver
     }
 
     Box(
         modifier = modifier
             .scale(if (isFocused) 1.04f else 1.0f)
-            .background(backgroundColor, RoundedCornerShape(2.dp))
+            .background(backgroundColor, RoundedCornerShape(3.dp))
             .border(
-                width = if (isFocused) 2.dp else if (isSelected) 1.5.dp else 1.dp,
+                width = if (isFocused) 1.5.dp else 1.dp,
                 color = borderColor,
-                shape = RoundedCornerShape(2.dp)
+                shape = RoundedCornerShape(3.dp)
             )
             .onFocusChanged { isFocused = it.isFocused }
             .focusable()
@@ -123,3 +123,4 @@ fun CategoryChip(
         )
     }
 }
+

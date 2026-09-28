@@ -3,7 +3,6 @@ package com.novatv.plus
 import com.novatv.plus.data.M3UParser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class M3UParserTest {

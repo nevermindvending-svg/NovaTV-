@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- Leanback TV Support -->
+    <!-- Android TV / Leanback Support -->
     <uses-feature
         android:name="android.software.leanback"
         android:required="false" />
@@ -31,12 +31,12 @@
             android:banner="@drawable/tv_banner"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard"
             android:theme="@style/Theme.MyApplication">
-            <!-- Mobile launcher -->
+            <!-- Mobile Launcher -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Android TV Leanback launcher -->
+            <!-- Android TV Leanback Launcher -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />

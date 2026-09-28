@@ -43,7 +43,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.onFocusChanged
@@ -74,7 +73,6 @@ fun ChannelList(
 ) {
     val listState = rememberLazyListState()
 
-    // Auto-scroll to selected channel on initial load
     LaunchedEffect(selectedChannel?.id) {
         val index = channels.indexOfFirst { it.id == selectedChannel?.id }
         if (index >= 0) {
@@ -89,7 +87,7 @@ fun ChannelList(
         ) {
             Text(
                 text = "No channels found in this category",
-                style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary)
+                style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondarySilver)
             )
         }
     } else {
@@ -97,7 +95,7 @@ fun ChannelList(
             state = listState,
             modifier = modifier
                 .fillMaxSize()
-                .background(OledBlack),
+                .background(BackgroundBlack),
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -127,39 +125,38 @@ fun ChannelItemRow(
 ) {
     var isFocused by remember { mutableStateOf(false) }
 
-    // Pulsing animation for LIVE indicator
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.5f,
+        initialValue = 0.6f,
         targetValue = 1.0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = FastOutSlowInEasing),
+            animation = tween(900, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "liveAlpha"
     )
 
     val backgroundColor = when {
-        isFocused -> Color(0xFF07242B)
-        isSelected -> Color(0xFF0F1A20)
-        else -> SurfaceDark08
+        isFocused -> SurfaceGraphite28
+        isSelected -> SurfaceGraphite1E
+        else -> SurfaceGraphite0D
     }
 
     val borderColor = when {
-        isFocused -> CyanAccent
-        isSelected -> CyanAccentDark
-        else -> SurfaceBorderDark
+        isFocused -> BorderFocused
+        isSelected -> BorderSubtleHighlight
+        else -> BorderSubtle
     }
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .scale(if (isFocused) 1.015f else 1.0f)
-            .background(backgroundColor, RoundedCornerShape(2.dp))
+            .background(backgroundColor, RoundedCornerShape(3.dp))
             .border(
-                width = if (isFocused) 2.dp else if (isSelected) 1.5.dp else 1.dp,
+                width = if (isFocused) 1.5.dp else 1.dp,
                 color = borderColor,
-                shape = RoundedCornerShape(2.dp)
+                shape = RoundedCornerShape(3.dp)
             )
             .onFocusChanged { isFocused = it.isFocused }
             .focusable()
@@ -177,24 +174,22 @@ fun ChannelItemRow(
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Channel ID Number (101, 102...)
         Text(
             text = channel.id.toString(),
             style = MaterialTheme.typography.labelLarge.copy(
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = if (isSelected || isFocused) CyanAccent else TextSecondary
+                fontSize = 13.sp,
+                color = if (isSelected || isFocused) TextPrimaryWhite else TextSecondarySilver
             ),
-            modifier = Modifier.width(38.dp)
+            modifier = Modifier.width(36.dp)
         )
 
-        // Channel Logo
         Box(
             modifier = Modifier
-                .size(40.dp, 30.dp)
-                .background(Color(0xFF141414), RoundedCornerShape(2.dp))
-                .border(0.5.dp, SurfaceBorderDark, RoundedCornerShape(2.dp))
+                .size(42.dp, 30.dp)
+                .background(SurfaceGraphite14, RoundedCornerShape(2.dp))
+                .border(0.5.dp, BorderSubtle, RoundedCornerShape(2.dp))
                 .clip(RoundedCornerShape(2.dp)),
             contentAlignment = Alignment.Center
         ) {
@@ -212,8 +207,8 @@ fun ChannelItemRow(
                             Icon(
                                 imageVector = Icons.Default.Tv,
                                 contentDescription = null,
-                                tint = TextMuted,
-                                modifier = Modifier.size(18.dp)
+                                tint = TextMutedGraphite,
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     },
@@ -221,8 +216,8 @@ fun ChannelItemRow(
                         Icon(
                             imageVector = Icons.Default.Tv,
                             contentDescription = null,
-                            tint = if (isSelected) CyanAccent else TextMuted,
-                            modifier = Modifier.size(18.dp)
+                            tint = if (isSelected) TextPrimaryWhite else TextMutedGraphite,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 )
@@ -230,15 +225,14 @@ fun ChannelItemRow(
                 Icon(
                     imageVector = Icons.Default.Tv,
                     contentDescription = null,
-                    tint = if (isSelected) CyanAccent else TextMuted,
-                    modifier = Modifier.size(18.dp)
+                    tint = if (isSelected) TextPrimaryWhite else TextMutedGraphite,
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
 
         Spacer(modifier = Modifier.width(10.dp))
 
-        // Channel Name & Category / Now Playing
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Center
@@ -248,8 +242,8 @@ fun ChannelItemRow(
                     text = channel.name,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = if (isSelected || isFocused) FontWeight.Bold else FontWeight.SemiBold,
-                        fontSize = 15.sp,
-                        color = if (isSelected || isFocused) TextWhite else Color(0xFFDDDDDD)
+                        fontSize = 14.5.sp,
+                        color = if (isSelected || isFocused) TextPrimaryWhite else Color(0xFFD4D4D8)
                     ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -261,8 +255,8 @@ fun ChannelItemRow(
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
                         contentDescription = "Currently Playing",
-                        tint = CyanAccent,
-                        modifier = Modifier.size(16.dp)
+                        tint = TextPrimaryWhite,
+                        modifier = Modifier.size(15.dp)
                     )
                 }
             }
@@ -270,13 +264,12 @@ fun ChannelItemRow(
             Spacer(modifier = Modifier.height(2.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Category Tag
                 Text(
                     text = channel.category,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
-                        color = if (isSelected) CyanAccentDark else TextMuted
+                        color = if (isSelected) AccentSilver else TextMutedGraphite
                     )
                 )
 
@@ -285,7 +278,7 @@ fun ChannelItemRow(
                         text = " • ${channel.programTitle}",
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontSize = 11.sp,
-                            color = TextSecondary
+                            color = TextSecondarySilver
                         ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -296,11 +289,10 @@ fun ChannelItemRow(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // LIVE badge with pulsing animation
         if (channel.isLive) {
             Box(
                 modifier = Modifier
-                    .background(LiveRed.copy(alpha = pulseAlpha), RoundedCornerShape(2.dp))
+                    .background(LiveIndicatorRed.copy(alpha = pulseAlpha), RoundedCornerShape(2.dp))
                     .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
                 Text(
@@ -308,13 +300,12 @@ fun ChannelItemRow(
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Black,
-                        color = TextWhite
+                        color = TextPrimaryWhite
                     )
                 )
             }
         }
 
-        // Favorite Button
         IconButton(
             onClick = onToggleFavorite,
             modifier = Modifier.size(36.dp)
@@ -322,9 +313,10 @@ fun ChannelItemRow(
             Icon(
                 imageVector = if (channel.isFavorite) Icons.Default.Star else Icons.Outlined.StarBorder,
                 contentDescription = if (channel.isFavorite) "Remove from favorites" else "Add to favorites",
-                tint = if (channel.isFavorite) CyanAccent else TextMuted,
-                modifier = Modifier.size(20.dp)
+                tint = if (channel.isFavorite) TextPrimaryWhite else TextMutedGraphite,
+                modifier = Modifier.size(18.dp)
             )
         }
     }
 }
+

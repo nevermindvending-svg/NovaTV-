@@ -13,10 +13,39 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+enum class AppDestination {
+    HOME,
+    LIVE_TV,
+    EPG,
+    SEARCH,
+    SETTINGS
+}
+
+data class EpgBlock(
+    val title: String,
+    val startTime: String,
+    val endTime: String,
+    val durationMinutes: Int,
+    val isCurrent: Boolean,
+    val description: String
+)
+
+data class ContinueWatchingItem(
+    val channel: Channel,
+    val programTitle: String,
+    val progress: Float, // 0.0f to 1.0f
+    val remainingMinutes: Int
+)
+
 class NovaTvViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = PlaylistRepository(application.applicationContext)
 
+    // Current Navigation Screen
+    private val _currentDestination = MutableStateFlow(AppDestination.HOME)
+    val currentDestination: StateFlow<AppDestination> = _currentDestination.asStateFlow()
+
+    // Loading & Data States
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -32,9 +61,24 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
     private val _selectedChannel = MutableStateFlow<Channel?>(null)
     val selectedChannel: StateFlow<Channel?> = _selectedChannel.asStateFlow()
 
+    // Recently Watched Channels
+    private val _recentlyWatched = MutableStateFlow<List<Channel>>(emptyList())
+    val recentlyWatched: StateFlow<List<Channel>> = _recentlyWatched.asStateFlow()
+
+    // Continue Watching Items
+    private val _continueWatching = MutableStateFlow<List<ContinueWatchingItem>>(emptyList())
+    val continueWatching: StateFlow<List<ContinueWatchingItem>> = _continueWatching.asStateFlow()
+
+    // Search State
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    private val _recentSearches = MutableStateFlow<List<String>>(
+        listOf("Sports", "Cinema", "News", "BBC", "NASA", "Documentary")
+    )
+    val recentSearches: StateFlow<List<String>> = _recentSearches.asStateFlow()
+
+    // Player Playback States
     private val _playerError = MutableStateFlow<String?>(null)
     val playerError: StateFlow<String?> = _playerError.asStateFlow()
 
@@ -47,10 +91,17 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
     private val _isMuted = MutableStateFlow(false)
     val isMuted: StateFlow<Boolean> = _isMuted.asStateFlow()
 
+    private val _selectedAudioTrack = MutableStateFlow("Original Stereo (AAC)")
+    val selectedAudioTrack: StateFlow<String> = _selectedAudioTrack.asStateFlow()
+
+    private val _selectedSubtitleTrack = MutableStateFlow("Off")
+    val selectedSubtitleTrack: StateFlow<String> = _selectedSubtitleTrack.asStateFlow()
+
+    // Playlist Config
     private val _customPlaylistUrl = MutableStateFlow(repository.getCustomPlaylistUrl())
     val customPlaylistUrl: StateFlow<String> = _customPlaylistUrl.asStateFlow()
 
-    // Filtered channels based on category and search query
+    // Filtered Channels for Live TV list and search
     val filteredChannels: StateFlow<List<Channel>> = combine(
         _allChannels,
         _selectedCategory,
@@ -68,7 +119,8 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
             } else {
                 channel.name.contains(query, ignoreCase = true) ||
                 channel.id.toString().contains(query.trim()) ||
-                channel.category.contains(query, ignoreCase = true)
+                channel.category.contains(query, ignoreCase = true) ||
+                (channel.programTitle?.contains(query, ignoreCase = true) == true)
             }
 
             matchesCategory && matchesQuery
@@ -79,6 +131,10 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
         loadChannels()
     }
 
+    fun navigateTo(destination: AppDestination) {
+        _currentDestination.value = destination
+    }
+
     fun loadChannels() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -87,7 +143,6 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
                 val loaded = repository.loadAllChannels()
                 _allChannels.value = loaded
 
-                // Build unique dynamic categories list
                 val categorySet = linkedSetOf("ALL", "FAVORITES")
                 loaded.forEach { ch ->
                     if (ch.category.isNotBlank() && ch.category != "ALL" && ch.category != "FAVORITES") {
@@ -96,9 +151,21 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
                 }
                 _categories.value = categorySet.toList()
 
-                // Auto-select first channel if none is currently selected
                 if (_selectedChannel.value == null && loaded.isNotEmpty()) {
-                    _selectedChannel.value = loaded.first()
+                    selectChannel(loaded.first())
+                }
+
+                // Populate Continue Watching and Recently Watched lists
+                if (loaded.isNotEmpty()) {
+                    _recentlyWatched.value = loaded.take(8)
+                    _continueWatching.value = loaded.take(4).mapIndexed { idx, ch ->
+                        ContinueWatchingItem(
+                            channel = ch,
+                            programTitle = ch.programTitle ?: "Evening Feature",
+                            progress = 0.35f + (idx * 0.15f),
+                            remainingMinutes = 20 - (idx * 4)
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 _playerError.value = "Failed to load playlists: ${e.localizedMessage ?: "Unknown error"}"
@@ -113,7 +180,18 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
             _playerError.value = null
             _isBuffering.value = true
             _selectedChannel.value = channel
+
+            // Add to recently watched (front of queue, deduplicated)
+            val updatedRecent = _recentlyWatched.value.toMutableList()
+            updatedRecent.removeAll { it.id == channel.id }
+            updatedRecent.add(0, channel)
+            _recentlyWatched.value = updatedRecent.take(12)
         }
+    }
+
+    fun playChannelAndGoToLive(channel: Channel) {
+        selectChannel(channel)
+        navigateTo(AppDestination.LIVE_TV)
     }
 
     fun selectCategory(category: String) {
@@ -122,6 +200,22 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun addRecentSearch(query: String) {
+        val trimmed = query.trim()
+        if (trimmed.isNotBlank()) {
+            val list = _recentSearches.value.toMutableList()
+            list.removeAll { it.equals(trimmed, ignoreCase = true) }
+            list.add(0, trimmed)
+            _recentSearches.value = list.take(8)
+        }
+    }
+
+    fun removeRecentSearch(query: String) {
+        val list = _recentSearches.value.toMutableList()
+        list.removeAll { it.equals(query, ignoreCase = true) }
+        _recentSearches.value = list
     }
 
     fun toggleFavorite(channelId: Int) {
@@ -135,7 +229,6 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
         }
         _allChannels.value = currentChannels
 
-        // Also update selectedChannel reference if it's the one toggled
         if (_selectedChannel.value?.id == channelId) {
             _selectedChannel.value = _selectedChannel.value?.copy(
                 isFavorite = updatedFavs.contains(channelId)
@@ -166,12 +259,19 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
         _isMuted.value = !_isMuted.value
     }
 
+    fun setAudioTrack(track: String) {
+        _selectedAudioTrack.value = track
+    }
+
+    fun setSubtitleTrack(track: String) {
+        _selectedSubtitleTrack.value = track
+    }
+
     fun retryCurrentChannel() {
         val current = _selectedChannel.value
         if (current != null) {
             _playerError.value = null
             _isBuffering.value = true
-            // Trigger state change
             _selectedChannel.value = null
             _selectedChannel.value = current
         }
@@ -181,5 +281,55 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
         repository.setCustomPlaylistUrl(url)
         _customPlaylistUrl.value = url
         loadChannels()
+    }
+
+    /**
+     * Generates EPG timeline program blocks for each channel
+     */
+    fun getEpgBlocksForChannel(channel: Channel): List<EpgBlock> {
+        val title1 = channel.programTitle ?: "Prime Broadcast"
+        val title2 = channel.nextProgramTitle ?: "Nightline Report"
+        return listOf(
+            EpgBlock(
+                title = "News Headlines Early",
+                startTime = "19:00",
+                endTime = "19:30",
+                durationMinutes = 30,
+                isCurrent = false,
+                description = "Pre-primetime regional updates and weather overview."
+            ),
+            EpgBlock(
+                title = "Market & Analysis Brief",
+                startTime = "19:30",
+                endTime = "20:00",
+                durationMinutes = 30,
+                isCurrent = false,
+                description = "Daily closing recap and international trade indicators."
+            ),
+            EpgBlock(
+                title = title1,
+                startTime = channel.programStart ?: "20:00",
+                endTime = channel.programEnd ?: "21:00",
+                durationMinutes = 60,
+                isCurrent = true,
+                description = channel.description ?: "Main broadcast feature presentation."
+            ),
+            EpgBlock(
+                title = title2,
+                startTime = channel.programEnd ?: "21:00",
+                endTime = "22:00",
+                durationMinutes = 60,
+                isCurrent = false,
+                description = "Late evening coverage, debate analysis and interviews."
+            ),
+            EpgBlock(
+                title = "Midnight Feature & Archive",
+                startTime = "22:00",
+                endTime = "23:30",
+                durationMinutes = 90,
+                isCurrent = false,
+                description = "Overnight cultural broadcast and classic retrospectives."
+            )
+        )
     }
 }

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <!-- Left Pillar of N -->
+    <path
+        android:pathData="M 38,24 L 49,28 L 49,84 L 38,88 Z"
+        android:fillColor="#222326" />
+    <path
+        android:pathData="M 38,24 L 49,28 L 49,56 L 38,52 Z"
+        android:fillColor="#4E5056" />
+    <path
+        android:pathData="M 38,24 L 39,24.5 L 39,87.5 L 38,88 Z"
+        android:fillColor="#E2E6EE" />
+
+    <!-- Center Diagonal -->
+    <path
+        android:pathData="M 38,24 L 82,78 L 71,88 L 38,47 Z"
+        android:fillColor="#18191B" />
+    <path
+        android:pathData="M 49,28 L 82,78 L 74,84 L 44,38 Z"
+        android:fillColor="#3D3F45" />
+    <path
+        android:pathData="M 48,34 L 80,80 L 82,78 L 49,31 Z"
+        android:fillColor="#8F949F" />
+
+    <!-- Right Pillar -->
+    <path
+        android:pathData="M 71,28 L 82,24 L 82,88 L 71,84 Z"
+        android:fillColor="#26282C" />
+    <path
+        android:pathData="M 71,28 L 82,24 L 82,52 L 71,56 Z"
+        android:fillColor="#5A5D66" />
+    <path
+        android:pathData="M 81,24 L 82,24 L 82,88 L 81,87.5 Z"
+        android:fillColor="#B6BAC4" />
+
+    <!-- Orbital Ring -->
+    <path
+        android:pathData="M 52,68 C 63,62 76,50 92,40 C 93,39.5 92.5,38.5 91,39 C 74,48 61,61 51,66.5 C 50.5,67 51,68.2 52,68 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- 4-point Sparkle Star -->
+    <path
+        android:pathData="M 90,44 C 90,47 88,49 85,49 C 88,49 90,51 90,54 C 90,51 92,49 95,49 C 92,49 90,47 90,44 Z"
+        android:fillColor="#FFFFFF" />
+
+</vector>

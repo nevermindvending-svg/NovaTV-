@@ -9,13 +9,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -60,7 +60,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -68,11 +67,10 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.hls.HlsMediaSource
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.novatv.plus.data.Channel
+import kotlinx.coroutines.delay
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -99,15 +97,19 @@ fun PlayerSection(
     )
     val resizeModeNames = listOf("FIT", "ZOOM", "FILL")
 
-    // Configure ExoPlayer with fast startup buffering
+    var showControls by remember { mutableStateOf(true) }
+
+    // Auto-hide controls after 4 seconds of inactivity
+    LaunchedEffect(showControls, isPlaying) {
+        if (showControls && isPlaying) {
+            delay(4000)
+            showControls = false
+        }
+    }
+
     val exoPlayer = remember {
         val loadControl = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(
-                2000,  // min buffer 2s
-                8000,  // max buffer 8s
-                1000,  // buffer for playback 1s
-                1500   // buffer for playback after rebuffer 1.5s
-            )
+            .setBufferDurationsMs(2000, 8000, 1000, 1500)
             .build()
 
         ExoPlayer.Builder(context)
@@ -118,24 +120,16 @@ fun PlayerSection(
             }
     }
 
-    // Attach listener for playback state and errors
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 when (playbackState) {
-                    Player.STATE_BUFFERING -> {
-                        onBufferingChanged(true)
-                    }
+                    Player.STATE_BUFFERING -> onBufferingChanged(true)
                     Player.STATE_READY -> {
                         onBufferingChanged(false)
                         onErrorOccurred(null)
                     }
-                    Player.STATE_ENDED -> {
-                        onBufferingChanged(false)
-                    }
-                    Player.STATE_IDLE -> {
-                        onBufferingChanged(false)
-                    }
+                    Player.STATE_ENDED, Player.STATE_IDLE -> onBufferingChanged(false)
                 }
             }
 
@@ -155,24 +149,15 @@ fun PlayerSection(
                             else -> "Stream server rejected connection (${cause.responseCode})"
                         }
                     }
-                    cause is HttpDataSource.HttpDataSourceException -> {
-                        "No connection to stream server"
-                    }
+                    cause is HttpDataSource.HttpDataSourceException -> "No connection to stream server"
                     error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW -> {
-                        // Live window slid, retry seek to default
                         exoPlayer.seekToDefaultPosition()
                         exoPlayer.prepare()
                         null
                     }
-                    error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED -> {
-                        "No internet connection"
-                    }
-                    error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED -> {
-                        "Invalid playlist format / unsupported codec"
-                    }
-                    else -> {
-                        "Unable to play this channel"
-                    }
+                    error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED -> "No internet connection"
+                    error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED -> "Invalid playlist format / unsupported codec"
+                    else -> "Unable to play this channel"
                 }
                 if (errorMessage != null) {
                     onErrorOccurred(errorMessage)
@@ -188,12 +173,10 @@ fun PlayerSection(
         }
     }
 
-    // Update mute state
     LaunchedEffect(isMuted) {
         exoPlayer.volume = if (isMuted) 0f else 1f
     }
 
-    // Load channel stream URL whenever selected channel changes
     LaunchedEffect(channel?.id, channel?.streamUrl) {
         val streamUrl = channel?.streamUrl
         if (!streamUrl.isNullOrBlank()) {
@@ -222,21 +205,19 @@ fun PlayerSection(
         }
     }
 
-    var showControls by remember { mutableStateOf(false) }
-
     Box(
         modifier = modifier
-            .background(OledBlack)
-            .border(1.dp, if (isFullscreen) Color.Transparent else SurfaceBorderDark, RoundedCornerShape(2.dp))
-            .clip(RoundedCornerShape(2.dp))
+            .background(BackgroundBlack)
+            .border(1.dp, if (isFullscreen) Color.Transparent else BorderSubtle, RoundedCornerShape(3.dp))
+            .clip(RoundedCornerShape(3.dp))
+            .clickable { showControls = !showControls }
     ) {
-        // Video Viewport
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
                 PlayerView(ctx).apply {
                     player = exoPlayer
-                    useController = false // Use custom premium OLED controls
+                    useController = false
                     layoutParams = FrameLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
@@ -262,18 +243,18 @@ fun PlayerSection(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier
-                    .background(Color(0xCC000000), RoundedCornerShape(4.dp))
+                    .background(Color(0xCC0D0D0D), RoundedCornerShape(4.dp))
                     .padding(16.dp)
             ) {
                 CircularProgressIndicator(
-                    color = CyanAccent,
-                    strokeWidth = 3.dp,
-                    modifier = Modifier.size(40.dp)
+                    color = TextPrimaryWhite,
+                    strokeWidth = 2.5.dp,
+                    modifier = Modifier.size(36.dp)
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "Connecting to stream…",
-                    style = MaterialTheme.typography.bodyMedium.copy(color = CyanAccent, fontWeight = FontWeight.SemiBold)
+                    text = "Buffering stream…",
+                    style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondarySilver, fontSize = 12.sp)
                 )
             }
         }
@@ -283,7 +264,7 @@ fun PlayerSection(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xEE080808))
+                    .background(Color(0xF00A0A0A))
                     .padding(16.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -294,22 +275,22 @@ fun PlayerSection(
                     Icon(
                         imageVector = Icons.Default.ErrorOutline,
                         contentDescription = "Error",
-                        tint = LiveRed,
-                        modifier = Modifier.size(44.dp)
+                        tint = TextSecondarySilver,
+                        modifier = Modifier.size(40.dp)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = playerError,
                         style = MaterialTheme.typography.titleMedium.copy(
-                            color = TextWhite,
+                            color = TextPrimaryWhite,
                             textAlign = TextAlign.Center
                         )
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "The stream may be temporarily unavailable.",
+                        text = "The broadcast server is temporarily unreachable.",
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            color = TextSecondary,
+                            color = TextMutedGraphite,
                             textAlign = TextAlign.Center
                         )
                     )
@@ -322,105 +303,104 @@ fun PlayerSection(
                             onRetry()
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (buttonFocused) CyanAccent else Color(0xFF1E293B),
-                            contentColor = if (buttonFocused) OledBlack else TextWhite
+                            containerColor = if (buttonFocused) TextPrimaryWhite else SurfaceGraphite28,
+                            contentColor = if (buttonFocused) BackgroundBlack else TextPrimaryWhite
                         ),
-                        shape = RoundedCornerShape(2.dp),
+                        shape = RoundedCornerShape(3.dp),
                         modifier = Modifier
                             .onFocusChanged { buttonFocused = it.isFocused }
                             .focusable()
                             .border(
-                                width = 1.5.dp,
-                                color = if (buttonFocused) CyanAccent else SurfaceBorderDark,
-                                shape = RoundedCornerShape(2.dp)
+                                width = 1.dp,
+                                color = if (buttonFocused) BorderFocused else BorderSubtle,
+                                shape = RoundedCornerShape(3.dp)
                             )
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "Retry",
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "Retry Stream",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.5.sp
                         )
                     }
                 }
             }
         }
 
-        // Top Overlay Bar (Controls: Mute, Aspect, Fullscreen)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.TopCenter)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color(0xD9000000), Color.Transparent)
-                    )
-                )
-                .padding(horizontal = 8.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        // Auto-hiding Minimal Controls Overlay
+        AnimatedVisibility(
+            visible = showControls || playerError != null || !isPlaying,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.TopCenter)
         ) {
-            // Channel Number Badge
-            if (channel != null) {
-                Box(
-                    modifier = Modifier
-                        .background(Color(0xFF00383D), RoundedCornerShape(2.dp))
-                        .border(1.dp, CyanAccent, RoundedCornerShape(2.dp))
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = "CH ${channel.id}",
-                        style = MaterialTheme.typography.labelLarge
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color(0xD9050505), Color.Transparent)
+                        )
+                    )
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (channel != null) {
+                    Box(
+                        modifier = Modifier
+                            .background(SurfaceGraphite28, RoundedCornerShape(2.dp))
+                            .border(0.75.dp, BorderSubtle, RoundedCornerShape(2.dp))
+                            .padding(horizontal = 7.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "CH ${channel.id}",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimaryWhite
+                            )
+                        )
+                    }
+                } else {
+                    Spacer(modifier = Modifier.width(1.dp))
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    PlayerIconButton(
+                        icon = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        onClick = {
+                            if (isPlaying) exoPlayer.pause() else exoPlayer.play()
+                        }
+                    )
+
+                    PlayerIconButton(
+                        icon = Icons.Default.AspectRatio,
+                        contentDescription = "Aspect: ${resizeModeNames[resizeModeIndex]}",
+                        onClick = {
+                            resizeModeIndex = (resizeModeIndex + 1) % resizeModes.size
+                        }
+                    )
+
+                    PlayerIconButton(
+                        icon = if (isMuted) Icons.Default.VolumeMute else Icons.Default.VolumeUp,
+                        contentDescription = if (isMuted) "Unmute" else "Mute",
+                        onClick = onToggleMute,
+                        activeColor = if (isMuted) LiveIndicatorRed else TextPrimaryWhite
+                    )
+
+                    PlayerIconButton(
+                        icon = if (isFullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen,
+                        contentDescription = if (isFullscreen) "Exit Fullscreen" else "Fullscreen",
+                        onClick = onToggleFullscreen,
+                        activeColor = TextPrimaryWhite
                     )
                 }
-            } else {
-                Spacer(modifier = Modifier.width(1.dp))
-            }
-
-            // Quick Player Actions
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Play / Pause
-                PlayerIconButton(
-                    icon = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = if (isPlaying) "Pause" else "Play",
-                    onClick = {
-                        if (isPlaying) {
-                            exoPlayer.pause()
-                        } else {
-                            exoPlayer.play()
-                        }
-                    }
-                )
-
-                // Aspect Ratio Toggle
-                PlayerIconButton(
-                    icon = Icons.Default.AspectRatio,
-                    contentDescription = "Aspect Ratio: ${resizeModeNames[resizeModeIndex]}",
-                    onClick = {
-                        resizeModeIndex = (resizeModeIndex + 1) % resizeModes.size
-                    }
-                )
-
-                // Mute Toggle
-                PlayerIconButton(
-                    icon = if (isMuted) Icons.Default.VolumeMute else Icons.Default.VolumeUp,
-                    contentDescription = if (isMuted) "Unmute" else "Mute",
-                    onClick = onToggleMute,
-                    activeColor = if (isMuted) LiveRed else TextWhite
-                )
-
-                // Fullscreen Toggle
-                PlayerIconButton(
-                    icon = if (isFullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen,
-                    contentDescription = if (isFullscreen) "Exit Fullscreen" else "Enter Fullscreen",
-                    onClick = onToggleFullscreen,
-                    activeColor = CyanAccent
-                )
             }
         }
     }
@@ -431,7 +411,7 @@ fun PlayerIconButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     contentDescription: String,
     onClick: () -> Unit,
-    activeColor: Color = TextWhite,
+    activeColor: Color = TextPrimaryWhite,
     modifier: Modifier = Modifier
 ) {
     var isFocused by remember { mutableStateOf(false) }
@@ -440,24 +420,24 @@ fun PlayerIconButton(
         onClick = onClick,
         modifier = modifier
             .padding(2.dp)
-            .size(36.dp)
+            .size(34.dp)
             .onFocusChanged { isFocused = it.isFocused }
             .background(
-                if (isFocused) CyanAccentGlow else Color(0x66000000),
-                RoundedCornerShape(2.dp)
+                if (isFocused) SurfaceGraphite28 else Color(0x66000000),
+                RoundedCornerShape(3.dp)
             )
             .border(
                 1.dp,
-                if (isFocused) CyanAccent else Color.Transparent,
-                RoundedCornerShape(2.dp)
+                if (isFocused) BorderFocused else Color.Transparent,
+                RoundedCornerShape(3.dp)
             )
             .focusable()
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = if (isFocused) CyanAccent else activeColor,
-            modifier = Modifier.size(20.dp)
+            tint = if (isFocused) TextPrimaryWhite else activeColor,
+            modifier = Modifier.size(18.dp)
         )
     }
 }

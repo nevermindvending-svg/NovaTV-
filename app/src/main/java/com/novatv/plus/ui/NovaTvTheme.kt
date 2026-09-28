@@ -14,40 +14,47 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// Color Palette for Nova TV+
-val CyanAccent = Color(0xFF00F0FF)
-val CyanAccentDark = Color(0xFF009DA8)
-val CyanAccentGlow = Color(0x3300F0FF)
-val OledBlack = Color(0xFF000000)
-val SurfaceDark08 = Color(0xFF080808)
-val SurfaceDark11 = Color(0xFF111111)
-val SurfaceDark1A = Color(0xFF181818)
-val SurfaceBorderDark = Color(0xFF262626)
-val LiveRed = Color(0xFFFF2020)
-val LiveRedDark = Color(0xFF990000)
-val TextWhite = Color(0xFFFFFFFF)
-val TextSecondary = Color(0xFFA0A0A0)
-val TextMuted = Color(0xFF6E6E6E)
+// ==========================================
+// NOVA TV+ Minimal Monochrome Palette
+// Pure black / Graphite / Subtle Silver
+// ==========================================
+val BackgroundBlack = Color(0xFF050505)
+val SurfaceGraphite0D = Color(0xFF0D0D0D)
+val SurfaceGraphite14 = Color(0xFF141414)
+val SurfaceGraphite1E = Color(0xFF1E1E1E)
+val SurfaceGraphite28 = Color(0xFF282828)
 
-private val NovaTvColorScheme: ColorScheme = darkColorScheme(
-    primary = CyanAccent,
-    onPrimary = OledBlack,
-    primaryContainer = Color(0xFF00363B),
-    onPrimaryContainer = CyanAccent,
-    secondary = Color(0xFF00A0AB),
-    onSecondary = TextWhite,
-    background = OledBlack,
-    onBackground = TextWhite,
-    surface = SurfaceDark08,
-    onSurface = TextWhite,
-    surfaceVariant = SurfaceDark11,
-    onSurfaceVariant = TextSecondary,
-    outline = SurfaceBorderDark,
-    error = LiveRed,
-    onError = TextWhite
+val BorderSubtle = Color(0xFF242424)
+val BorderFocused = Color(0xFFFFFFFF)
+val BorderSubtleHighlight = Color(0xFF3E3E3E)
+
+val TextPrimaryWhite = Color(0xFFF5F5F7)
+val TextSecondarySilver = Color(0xFFA1A1A6)
+val TextMutedGraphite = Color(0xFF6E6E73)
+
+val AccentSilver = Color(0xFFE5E5EA)
+val AccentSilverDim = Color(0xFF8E8E93)
+val LiveIndicatorRed = Color(0xFFE50914) // Subtle cinematic red for live broadcast badge
+
+private val NovaMonochromeColorScheme: ColorScheme = darkColorScheme(
+    primary = TextPrimaryWhite,
+    onPrimary = BackgroundBlack,
+    primaryContainer = SurfaceGraphite1E,
+    onPrimaryContainer = TextPrimaryWhite,
+    secondary = AccentSilver,
+    onSecondary = BackgroundBlack,
+    background = BackgroundBlack,
+    onBackground = TextPrimaryWhite,
+    surface = SurfaceGraphite0D,
+    onSurface = TextPrimaryWhite,
+    surfaceVariant = SurfaceGraphite14,
+    onSurfaceVariant = TextSecondarySilver,
+    outline = BorderSubtle,
+    outlineVariant = BorderSubtleHighlight,
+    error = LiveIndicatorRed,
+    onError = TextPrimaryWhite
 )
 
-// Sharp minimal shapes (2.dp to 4.dp)
 val NovaTvShapes = Shapes(
     small = RoundedCornerShape(2.dp),
     medium = RoundedCornerShape(4.dp),
@@ -56,67 +63,73 @@ val NovaTvShapes = Shapes(
 
 val NovaTvTypography = Typography(
     headlineLarge = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Bold,
         fontSize = 28.sp,
+        letterSpacing = 0.5.sp,
         lineHeight = 34.sp,
-        color = TextWhite
+        color = TextPrimaryWhite
     ),
     headlineMedium = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Bold,
         fontSize = 22.sp,
+        letterSpacing = 0.4.sp,
         lineHeight = 28.sp,
-        color = TextWhite
+        color = TextPrimaryWhite
     ),
     titleLarge = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 18.sp,
-        lineHeight = 24.sp,
-        color = TextWhite
+        fontSize = 17.sp,
+        letterSpacing = 0.2.sp,
+        lineHeight = 22.sp,
+        color = TextPrimaryWhite
     ),
     titleMedium = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 15.sp,
+        letterSpacing = 0.15.sp,
         lineHeight = 20.sp,
-        color = TextWhite
+        color = TextPrimaryWhite
     ),
     bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
+        letterSpacing = 0.1.sp,
         lineHeight = 20.sp,
-        color = TextWhite
+        color = TextPrimaryWhite
     ),
     bodyMedium = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Normal,
         fontSize = 13.sp,
+        letterSpacing = 0.1.sp,
         lineHeight = 18.sp,
-        color = TextSecondary
+        color = TextSecondarySilver
     ),
     labelLarge = TextStyle(
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Bold,
-        fontSize = 13.sp,
-        letterSpacing = 0.5.sp,
-        color = CyanAccent
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 12.sp,
+        letterSpacing = 0.8.sp,
+        color = TextPrimaryWhite
     ),
     labelSmall = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Bold,
         fontSize = 10.sp,
-        letterSpacing = 0.5.sp,
-        color = TextWhite
+        letterSpacing = 0.6.sp,
+        color = TextSecondarySilver
     )
 )
 
 @Composable
 fun NovaTvTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = NovaTvColorScheme,
+        colorScheme = NovaMonochromeColorScheme,
         shapes = NovaTvShapes,
         typography = NovaTvTypography,
         content = content

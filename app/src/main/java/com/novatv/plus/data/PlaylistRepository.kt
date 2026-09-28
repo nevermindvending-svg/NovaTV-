@@ -38,31 +38,18 @@ class PlaylistRepository(private val context: Context) {
          */
         const val PLACEHOLDER_PRIVATE_URL = "https://example.com/private-playlist.m3u"
 
-        // 12 Playlist sources loaded concurrently
         val DEFAULT_PLAYLIST_SOURCES = listOf(
-            // 1. Global Public News (DW, France24, Sky News, EuroNews, Al Jazeera, etc.)
             "https://iptv-org.github.io/iptv/categories/news.m3u",
-            // 2. Global Sports & Motorsports (Red Bull TV, outdoor, racing)
             "https://iptv-org.github.io/iptv/categories/sports.m3u",
-            // 3. Movies & Cinema Streams
             "https://iptv-org.github.io/iptv/categories/movies.m3u",
-            // 4. Entertainment & Series
             "https://iptv-org.github.io/iptv/categories/entertainment.m3u",
-            // 5. Kids & Animation
             "https://iptv-org.github.io/iptv/categories/kids.m3u",
-            // 6. Music & Concerts
             "https://iptv-org.github.io/iptv/categories/music.m3u",
-            // 7. Documentaries & Science (NASA TV, Nature, Earth)
             "https://iptv-org.github.io/iptv/categories/documentary.m3u",
-            // 8. Technology & Gaming
             "https://iptv-org.github.io/iptv/categories/tech.m3u",
-            // 9. Classic Cinema & Retro TV
             "https://iptv-org.github.io/iptv/categories/classic.m3u",
-            // 10. Weather & Radar 24/7
             "https://iptv-org.github.io/iptv/categories/weather.m3u",
-            // 11. Culture & Lifestyle
             "https://iptv-org.github.io/iptv/categories/lifestyle.m3u",
-            // 12. Configurable / Private User Playlist (No hardcoded credentials)
             PLACEHOLDER_PRIVATE_URL
         )
     }
@@ -91,20 +78,14 @@ class PlaylistRepository(private val context: Context) {
         return current
     }
 
-    /**
-     * Concurrently loads all 12 playlists, deduplicates stream URLs,
-     * and assigns sequential channel IDs starting at 101.
-     */
     suspend fun loadAllChannels(): List<Channel> = withContext(Dispatchers.IO) {
         val activeSources = DEFAULT_PLAYLIST_SOURCES.toMutableList()
 
-        // Replace slot 12 with user-configured URL if provided
         val userCustomUrl = getCustomPlaylistUrl()
         if (userCustomUrl.isNotBlank() && userCustomUrl != PLACEHOLDER_PRIVATE_URL) {
             activeSources[11] = userCustomUrl
         }
 
-        // Concurrently fetch each playlist using coroutines async/awaitAll
         val parsedChannelLists: List<List<Channel>> = coroutineScope {
             activeSources.map { sourceUrl ->
                 async {
@@ -113,23 +94,20 @@ class PlaylistRepository(private val context: Context) {
             }.awaitAll()
         }
 
-        // Flatten all lists
         val allRawChannels = mutableListOf<Channel>()
         for (list in parsedChannelLists) {
             allRawChannels.addAll(list)
         }
 
-        // If network was unavailable or all playlists were empty, provide fallback channels
         if (allRawChannels.isEmpty()) {
             allRawChannels.addAll(getBuiltInFallbackChannels())
         }
 
-        // Deduplication: remove duplicate stream URLs, keeping first valid metadata
         val seenUrls = mutableSetOf<String>()
         val deduplicated = mutableListOf<Channel>()
         val favorites = getFavoriteIds()
 
-        var nextChannelId = 101 // Channel IDs MUST start at 101
+        var nextChannelId = 101 // Channel IDs start at 101
 
         for (channel in allRawChannels) {
             val normalizedUrl = channel.streamUrl.trim()
@@ -148,11 +126,7 @@ class PlaylistRepository(private val context: Context) {
         return@withContext deduplicated
     }
 
-    /**
-     * Safely fetches a single M3U playlist from HTTP/HTTPS or local assets without crashing.
-     */
     private suspend fun fetchAndParsePlaylist(url: String): List<Channel> {
-        // Skip placeholder URL without throwing errors
         if (url == PLACEHOLDER_PRIVATE_URL || url.isBlank()) {
             return emptyList()
         }
@@ -174,7 +148,6 @@ class PlaylistRepository(private val context: Context) {
                     return emptyList()
                 }
 
-                // Parse with M3UParser
                 M3UParser.parse(bodyString)
             }
         } catch (e: IOException) {
@@ -186,10 +159,6 @@ class PlaylistRepository(private val context: Context) {
         }
     }
 
-    /**
-     * Guaranteed reliable public HLS test and public broadcasting streams.
-     * Ensures the player is immediately functional even in restricted emulator environments.
-     */
     fun getBuiltInFallbackChannels(): List<Channel> {
         return listOf(
             Channel(
@@ -272,32 +241,6 @@ class PlaylistRepository(private val context: Context) {
             ),
             Channel(
                 id = 0,
-                name = "Nova Entertainment: Tears of Steel 4K",
-                logoUrl = "https://upload.wikimedia.org/wikipedia/commons/e/ec/Tears_of_Steel_poster.jpg",
-                category = "ENTERTAINMENT",
-                streamUrl = "https://dash.akamaized.net/dash2pr/features/bigbuckbunny/bigbuckbunny-on-demand.mpd",
-                isLive = true,
-                programTitle = "Evening Variety Special",
-                programStart = "20:00",
-                programEnd = "21:00",
-                nextProgramTitle = "Late Night Cinema",
-                description = "Primetime entertainment showcase featuring music, comedy, and cultural specials."
-            ),
-            Channel(
-                id = 0,
-                name = "Nova Kids: Sintel Animation",
-                logoUrl = "https://upload.wikimedia.org/wikipedia/commons/8/8f/Sintel_poster.jpg",
-                category = "KIDS",
-                streamUrl = "https://bitmovin-a.akamaihd.net/content/sintel/hls/playlist.m3u8",
-                isLive = true,
-                programTitle = "Sintel: The Dragon Quest",
-                programStart = "19:00",
-                programEnd = "20:00",
-                nextProgramTitle = "Toon Galaxy",
-                description = "A young hero embarks on a grand fantasy journey across perilous mountain peaks and forgotten kingdoms."
-            ),
-            Channel(
-                id = 0,
                 name = "Sky News Live UK",
                 logoUrl = "https://upload.wikimedia.org/wikipedia/en/b/b3/Sky_News_logo_2020.svg",
                 category = "NEWS",
@@ -321,19 +264,6 @@ class PlaylistRepository(private val context: Context) {
                 programEnd = "20:30",
                 nextProgramTitle = "Global Economy Watch",
                 description = "European perspective on world news, cultural happenings and financial markets."
-            ),
-            Channel(
-                id = 0,
-                name = "Bloomberg Live TV",
-                logoUrl = "https://upload.wikimedia.org/wikipedia/commons/5/5e/Bloomberg_Television_logo.svg",
-                category = "NEWS",
-                streamUrl = "https://liveproduseast.akamaized.net/us/Channel-USTV-AWS-virginia-1/master.m3u8",
-                isLive = true,
-                programTitle = "Bloomberg Technology & Markets",
-                programStart = "20:00",
-                programEnd = "21:00",
-                nextProgramTitle = "Wall Street Week",
-                description = "Global financial markets, technology giants, cryptocurrency movements and CEO interviews."
             ),
             Channel(
                 id = 0,

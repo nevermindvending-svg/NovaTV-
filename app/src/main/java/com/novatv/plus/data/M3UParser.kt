@@ -39,13 +39,11 @@ object M3UParser {
             }
 
             if (trimmed.startsWith("#EXTINF:", ignoreCase = true)) {
-                // Parse attributes
                 currentTvgId = extractAttribute(TVG_ID_PATTERN, trimmed)
                 currentTvgName = extractAttribute(TVG_NAME_PATTERN, trimmed)
                 currentTvgLogo = extractAttribute(TVG_LOGO_PATTERN, trimmed)
                 currentGroupTitle = extractAttribute(GROUP_TITLE_PATTERN, trimmed)
 
-                // Channel title is after the last comma
                 val commaIndex = trimmed.lastIndexOf(',')
                 currentChannelName = if (commaIndex != -1 && commaIndex < trimmed.length - 1) {
                     trimmed.substring(commaIndex + 1).trim()
@@ -57,7 +55,6 @@ object M3UParser {
                     currentChannelName = currentTvgName ?: "Live Channel"
                 }
             } else if (!trimmed.startsWith("#")) {
-                // This is the stream URL
                 if (trimmed.startsWith("http://", ignoreCase = true) ||
                     trimmed.startsWith("https://", ignoreCase = true) ||
                     trimmed.startsWith("rtmp://", ignoreCase = true) ||
@@ -68,7 +65,7 @@ object M3UParser {
                     val program = generateMockProgram(name, category)
 
                     val channel = Channel(
-                        id = 0, // Assigned later
+                        id = 0,
                         name = name,
                         logoUrl = currentTvgLogo?.takeIf { it.isNotBlank() },
                         category = category,
@@ -85,7 +82,6 @@ object M3UParser {
                     channels.add(channel)
                 }
 
-                // Reset per-channel fields
                 currentTvgId = null
                 currentTvgName = null
                 currentTvgLogo = null

@@ -43,7 +43,6 @@ class MainActivity : ComponentActivity() {
             KeyEvent.KEYCODE_DPAD_DOWN,
             KeyEvent.KEYCODE_DPAD_LEFT,
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                // Allow Compose focus system to handle standard navigation
                 super.onKeyDown(keyCode, event)
             }
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
