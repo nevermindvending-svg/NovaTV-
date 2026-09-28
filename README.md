@@ -1,5 +1,7 @@
-NOVA TV+
+#  NOVA TV+
 
+```text
+```text
 ███╗   ██╗ ██████╗ ██╗   ██╗ █████╗
 ████╗  ██║██╔═══██╗██║   ██║██╔══██╗
 ██╔██╗ ██║██║   ██║██║   ██║███████║
@@ -8,43 +10,50 @@ NOVA TV+
 ╚═╝  ╚═══╝ ╚═════╝   ╚═══╝  ╚═╝  ╚═╝
 
                     T V +
+```
 
-Tagline
+> ✦ **WATCH BEYOND ORDINARY.** ✦
 
-WATCH BEYOND ORDINARY.
+────────────────────────────────────────
 
-Description
+🎬 **NOVA TV+** is a sleek, modern TV experience
+built around simplicity, speed, and style.
 
-NOVA TV+ is a sleek, modern entertainment experience built around simplicity, speed and a premium TV-first interface.
+📺 **Live Entertainment**  
+⚡ **Fast & Smooth Experience**  
+🖥️ **TV-First Interface**  
+🎨 **Minimal Premium Design**  
+🌙 **Dark Cinematic UI**  
+🚀 **Built for a Seamless Experience**
 
-Discover your channels and entertainment through a clean, distraction-free experience designed for effortless viewing.
+────────────────────────────────────────
 
-Minimal. Powerful. Nova.
+        ✦ MINIMAL • POWERFUL • NOVA ✦
 
-Key Features
+────────────────────────────────────────
 
-• Premium dark interface
-• Fast and smooth playback
-• Clean channel browsing
-• Modern TV-first navigation
-• Designed for Android & Android TV
-• Simple, distraction-free experience
+### ✨ FEATURES
 
-Brand Direction
+📡 **Live TV** — Browse your available channels  
+🎞️ **Entertainment** — Keep your content organized  
+⚡ **Performance** — Smooth and responsive navigation  
+🎨 **Premium UI** — Clean black & white aesthetic  
+📱 **Multi-Device** — Designed with modern screens in mind  
+🔎 **Simple Navigation** — Find what you want faster
 
-Primary: "#FFFFFF" — Logo & text
-Background: "#000000" — Pure black
-Secondary: "#A0A0A0" — Supporting text
-Style: Minimal • Premium • Sharp • Modern • Cinematic
+────────────────────────────────────────
 
-App Splash Text
+### 🖤 THE NOVA EXPERIENCE
 
-NOVA
+No unnecessary clutter.  
+No overwhelming interface.  
+Just a clean, cinematic TV experience.
 
-TV+
+> **NOVA TV+**
+>
+> *Watch beyond ordinary.*
 
-WATCH BEYOND ORDINARY.
+────────────────────────────────────────
+``` 
 
-Short App Description
-
-NOVA TV+ — A premium, minimal TV experience designed for fast, effortless entertainment.
+This keeps the **spaces and ASCII alignment intact on GitHub**.
