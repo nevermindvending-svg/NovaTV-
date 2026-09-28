@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <!-- Dark Background -->
+    <path
+        android:pathData="M0,0h320v180h-320z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="320"
+                android:endY="180"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#000205" />
+                <item android:offset="0.5" android:color="#040F18" />
+                <item android:offset="1.0" android:color="#0A1E2B" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Border Frame -->
+    <path
+        android:pathData="M1,1h318v178h-318z"
+        android:strokeColor="#00F0FF"
+        android:strokeWidth="1.5" />
+    <!-- TV icon Left -->
+    <path
+        android:pathData="M 40,50 L 96,50 C 98,50 100,52 100,54 L 100,106 C 100,108 98,110 96,110 L 40,110 C 38,110 36,108 36,106 L 36,54 C 36,52 38,50 40,50 Z"
+        android:fillColor="#091823"
+        android:strokeColor="#00F0FF"
+        android:strokeWidth="3" />
+    <path
+        android:pathData="M 60,110 L 60,122 L 48,122 L 48,126 L 88,126 L 88,122 L 76,122 L 76,110"
+        android:fillColor="#00F0FF" />
+    <path
+        android:pathData="M 61,68 L 78,80 L 61,92 Z"
+        android:fillColor="#00F0FF" />
+    <!-- LIVE badge -->
+    <path
+        android:pathData="M 230,30 L 290,30 C 292,30 294,32 294,34 L 294,48 C 294,50 292,52 290,52 L 230,52 C 228,52 226,50 226,48 L 226,34 C 226,32 228,30 230,30 Z"
+        android:fillColor="#FF2020" />
+</vector>

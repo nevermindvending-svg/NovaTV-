@@ -1,0 +1,6 @@
+{
+  "name": "Nova TV+",
+  "description": "Premium IPTV streaming player for Android TV and mobile with multi-playlist support, Media3 ExoPlayer, and D-pad navigation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

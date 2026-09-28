@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Monitor Outer Frame -->
+    <path
+        android:pathData="M 28,32 L 80,32 C 82.2,32 84,33.8 84,36 L 84,72 C 84,74.2 82.2,76 80,76 L 28,76 C 25.8,76 24,74.2 24,72 L 24,36 C 24,33.8 25.8,32 28,32 Z"
+        android:fillColor="#101D28"
+        android:strokeColor="#00F0FF"
+        android:strokeWidth="2.5" />
+    <!-- Stand Base -->
+    <path
+        android:pathData="M 46,76 L 46,82 L 40,82 L 40,84 L 68,84 L 68,82 L 62,82 L 62,76"
+        android:fillColor="#00F0FF" />
+    <!-- Center Play Icon -->
+    <path
+        android:pathData="M 48,44 L 62,53 L 48,62 Z"
+        android:fillColor="#00F0FF" />
+    <!-- Plus symbol in top right -->
+    <path
+        android:pathData="M 72,40 L 78,40 M 75,37 L 75,43"
+        android:strokeColor="#00F0FF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+</vector>

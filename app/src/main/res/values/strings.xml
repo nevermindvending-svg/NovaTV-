@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">Nova TV+</string>
+    <string name="live">LIVE</string>
+    <string name="now_playing">NOW PLAYING</string>
+    <string name="up_next">NEXT</string>
+    <string name="loading_channels">Connecting to channels…</string>
+    <string name="loading_stream">Buffering stream…</string>
+    <string name="channel_unavailable">Unable to play this channel</string>
+    <string name="access_denied">Access denied by stream server</string>
+    <string name="no_internet">No internet connection</string>
+    <string name="retry">Retry</string>
+    <string name="category_all">ALL</string>
+    <string name="category_favorites">FAVORITES</string>
+    <string name="fullscreen">Fullscreen</string>
+    <string name="search_hint">Search channel or number…</string>
+    <string name="add_playlist">Add Playlist</string>
+    <string name="manage_playlists">Playlists</string>
+</resources>
