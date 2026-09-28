@@ -28,17 +28,51 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      - name: Prepare environment and keystore
+        run: |
+          # 1. Ensure .env exists for the secrets gradle plugin
+          if [ ! -f .env ]; then
+            if [ -f .env.example ]; then
+              cp .env.example .env
+            else
+              touch .env
+            fi
+          fi
+
+          # 2. Ensure debug.keystore exists for signingConfigs.debugConfig
+          if [ -f debug.keystore.base64 ]; then
+            base64 -d debug.keystore.base64 > debug.keystore
+          elif [ ! -f debug.keystore ]; then
+            keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+          # 3. Ensure gradlew is executable
+          if [ -f gradlew ]; then
+            chmod +x gradlew
+          fi
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: |
+          if [ -f gradlew ] && [ -f gradle/wrapper/gradle-wrapper.jar ]; then
+            ./gradlew assembleDebug --no-daemon --stacktrace
+          else
+            gradle assembleDebug --no-daemon --stacktrace
+          fi
 
-      - name: Rename APK for clarity
+      - name: Locate and prepare APK artifact
         run: |
           mkdir -p build-artifacts
-          cp app/build/outputs/apk/debug/app-debug.apk build-artifacts/NovaTV-Plus-debug.apk
+          APK_FILE=$(find app/build/outputs/apk/debug -name "*.apk" | head -n 1)
+          if [ -z "$APK_FILE" ]; then
+            echo "Error: APK file not found!"
+            find app/build -name "*.apk" || true
+            exit 1
+          fi
+          echo "Found APK: $APK_FILE"
+          cp "$APK_FILE" build-artifacts/NovaTV-Plus-debug.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -47,8 +81,13 @@ jobs:
           path: build-artifacts/NovaTV-Plus-debug.apk
           retention-days: 30
 
-      - name: Job Summary
+      - name: Generate Job Summary
         run: |
-          echo "### 🚀 Build Successful!" >> $GITHUB_STEP_SUMMARY
-          echo "The **Nova TV+** APK is ready." >> $GITHUB_STEP_SUMMARY
-          echo "You can download **NovaTV-Plus-APK** directly from the **Artifacts** section at the bottom of this run summary." >> $GITHUB_STEP_SUMMARY
+          echo "## 📺 Nova TV+ Build Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The **Nova TV+** APK has been generated successfully." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📥 How to download:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Scroll down to the **Artifacts** section at the bottom of this page." >> $GITHUB_STEP_SUMMARY
+          echo "2. Click on **NovaTV-Plus-APK** to download the zip containing \`NovaTV-Plus-debug.apk\`." >> $GITHUB_STEP_SUMMARY
+          echo "3. Extract and install the APK on your Android device, Android TV, or emulator." >> $GITHUB_STEP_SUMMARY
