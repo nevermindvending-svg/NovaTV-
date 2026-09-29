@@ -5,6 +5,10 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.novatv.plus.data.Channel
 import com.novatv.plus.data.PlaylistRepository
+import com.novatv.plus.data.epg.EpgEngine
+import com.novatv.plus.data.epg.EpgTimelineSlot
+import com.novatv.plus.data.epg.RealEpgProgram
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,15 +24,6 @@ enum class AppDestination {
     SEARCH,
     SETTINGS
 }
-
-data class EpgBlock(
-    val title: String,
-    val startTime: String,
-    val endTime: String,
-    val durationMinutes: Int,
-    val isCurrent: Boolean,
-    val description: String
-)
 
 data class ContinueWatchingItem(
     val channel: Channel,
@@ -46,7 +41,7 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
     val currentDestination: StateFlow<AppDestination> = _currentDestination.asStateFlow()
 
     // Loading & Data States
-    private val _isLoading = MutableStateFlow(true)
+    private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _allChannels = MutableStateFlow<List<Channel>>(emptyList())
@@ -101,6 +96,10 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
     private val _customPlaylistUrl = MutableStateFlow(repository.getCustomPlaylistUrl())
     val customPlaylistUrl: StateFlow<String> = _customPlaylistUrl.asStateFlow()
 
+    // Real EPG Timeline Slots
+    private val _epgTimeline = MutableStateFlow<List<EpgTimelineSlot>>(EpgEngine.getTimelineSlots())
+    val epgTimeline: StateFlow<List<EpgTimelineSlot>> = _epgTimeline.asStateFlow()
+
     // Filtered Channels for Live TV list and search
     val filteredChannels: StateFlow<List<Channel>> = combine(
         _allChannels,
@@ -129,15 +128,36 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
 
     init {
         loadChannels()
+        observeFavoritesFromRoom()
+    }
+
+    private fun observeFavoritesFromRoom() {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.getFavoritesFlow().collect { favList ->
+                val favUrls = favList.map { it.streamUrl }.toSet()
+                _allChannels.value = _allChannels.value.map { ch ->
+                    ch.copy(isFavorite = favUrls.contains(ch.streamUrl))
+                }
+                _selectedChannel.value?.let { current ->
+                    _selectedChannel.value = current.copy(isFavorite = favUrls.contains(current.streamUrl))
+                }
+            }
+        }
     }
 
     fun navigateTo(destination: AppDestination) {
         _currentDestination.value = destination
+        if (destination == AppDestination.EPG) {
+            refreshEpgTimeline()
+        }
+    }
+
+    fun refreshEpgTimeline() {
+        _epgTimeline.value = EpgEngine.getTimelineSlots()
     }
 
     fun loadChannels() {
         viewModelScope.launch {
-            _isLoading.value = true
             _playerError.value = null
             try {
                 val loaded = repository.loadAllChannels()
@@ -163,14 +183,12 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
                             channel = ch,
                             programTitle = ch.programTitle ?: "Evening Feature",
                             progress = 0.35f + (idx * 0.15f),
-                            remainingMinutes = 20 - (idx * 4)
+                            remainingMinutes = 24 - (idx * 5)
                         )
                     }
                 }
             } catch (e: Exception) {
                 _playerError.value = "Failed to load playlists: ${e.localizedMessage ?: "Unknown error"}"
-            } finally {
-                _isLoading.value = false
             }
         }
     }
@@ -183,7 +201,7 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
 
             // Add to recently watched (front of queue, deduplicated)
             val updatedRecent = _recentlyWatched.value.toMutableList()
-            updatedRecent.removeAll { it.id == channel.id }
+            updatedRecent.removeAll { it.streamUrl == channel.streamUrl }
             updatedRecent.add(0, channel)
             _recentlyWatched.value = updatedRecent.take(12)
         }
@@ -219,20 +237,24 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun toggleFavorite(channelId: Int) {
-        val updatedFavs = repository.toggleFavorite(channelId)
-        val currentChannels = _allChannels.value.map { ch ->
-            if (ch.id == channelId) {
-                ch.copy(isFavorite = updatedFavs.contains(channelId))
-            } else {
-                ch
-            }
-        }
-        _allChannels.value = currentChannels
+        val target = _allChannels.value.find { it.id == channelId } ?: return
+        toggleFavorite(target)
+    }
 
-        if (_selectedChannel.value?.id == channelId) {
-            _selectedChannel.value = _selectedChannel.value?.copy(
-                isFavorite = updatedFavs.contains(channelId)
-            )
+    fun toggleFavorite(channel: Channel) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val isNowFavorite = repository.toggleFavorite(channel)
+            // Immediately update memory state for instant UI response
+            _allChannels.value = _allChannels.value.map { ch ->
+                if (ch.streamUrl == channel.streamUrl || ch.id == channel.id) {
+                    ch.copy(isFavorite = isNowFavorite)
+                } else {
+                    ch
+                }
+            }
+            if (_selectedChannel.value?.streamUrl == channel.streamUrl) {
+                _selectedChannel.value = _selectedChannel.value?.copy(isFavorite = isNowFavorite)
+            }
         }
     }
 
@@ -284,52 +306,9 @@ class NovaTvViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     /**
-     * Generates EPG timeline program blocks for each channel
+     * Delegates to Real EPG Engine to calculate dynamic programs tailored to channel genre.
      */
-    fun getEpgBlocksForChannel(channel: Channel): List<EpgBlock> {
-        val title1 = channel.programTitle ?: "Prime Broadcast"
-        val title2 = channel.nextProgramTitle ?: "Nightline Report"
-        return listOf(
-            EpgBlock(
-                title = "News Headlines Early",
-                startTime = "19:00",
-                endTime = "19:30",
-                durationMinutes = 30,
-                isCurrent = false,
-                description = "Pre-primetime regional updates and weather overview."
-            ),
-            EpgBlock(
-                title = "Market & Analysis Brief",
-                startTime = "19:30",
-                endTime = "20:00",
-                durationMinutes = 30,
-                isCurrent = false,
-                description = "Daily closing recap and international trade indicators."
-            ),
-            EpgBlock(
-                title = title1,
-                startTime = channel.programStart ?: "20:00",
-                endTime = channel.programEnd ?: "21:00",
-                durationMinutes = 60,
-                isCurrent = true,
-                description = channel.description ?: "Main broadcast feature presentation."
-            ),
-            EpgBlock(
-                title = title2,
-                startTime = channel.programEnd ?: "21:00",
-                endTime = "22:00",
-                durationMinutes = 60,
-                isCurrent = false,
-                description = "Late evening coverage, debate analysis and interviews."
-            ),
-            EpgBlock(
-                title = "Midnight Feature & Archive",
-                startTime = "22:00",
-                endTime = "23:30",
-                durationMinutes = 90,
-                isCurrent = false,
-                description = "Overnight cultural broadcast and classic retrospectives."
-            )
-        )
+    fun getEpgPrograms(channel: Channel): List<RealEpgProgram> {
+        return EpgEngine.getProgramsForChannel(channel)
     }
 }

@@ -23,8 +23,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -129,7 +132,8 @@ fun HomeScreen(
                     items(allChannels.take(12), key = { it.id }) { channel ->
                         ChannelCard(
                             channel = channel,
-                            onClick = { viewModel.playChannelAndGoToLive(channel) }
+                            onClick = { viewModel.playChannelAndGoToLive(channel) },
+                            onToggleFavorite = { viewModel.toggleFavorite(channel) }
                         )
                     }
                 }
@@ -148,7 +152,8 @@ fun HomeScreen(
                     items(recentlyWatched, key = { "recent_${it.id}" }) { channel ->
                         ChannelCard(
                             channel = channel,
-                            onClick = { viewModel.playChannelAndGoToLive(channel) }
+                            onClick = { viewModel.playChannelAndGoToLive(channel) },
+                            onToggleFavorite = { viewModel.toggleFavorite(channel) }
                         )
                     }
                 }
@@ -167,7 +172,8 @@ fun HomeScreen(
                     items(favorites, key = { "fav_${it.id}" }) { channel ->
                         ChannelCard(
                             channel = channel,
-                            onClick = { viewModel.playChannelAndGoToLive(channel) }
+                            onClick = { viewModel.playChannelAndGoToLive(channel) },
+                            onToggleFavorite = { viewModel.toggleFavorite(channel) }
                         )
                     }
                 }
@@ -189,7 +195,8 @@ fun HomeScreen(
                         items(catChannels.take(10), key = { "cat_${cat}_${it.id}" }) { channel ->
                             ChannelCard(
                                 channel = channel,
-                                onClick = { viewModel.playChannelAndGoToLive(channel) }
+                                onClick = { viewModel.playChannelAndGoToLive(channel) },
+                                onToggleFavorite = { viewModel.toggleFavorite(channel) }
                             )
                         }
                     }
@@ -342,7 +349,8 @@ fun ContinueWatchingCard(
 @Composable
 fun ChannelCard(
     channel: Channel,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onToggleFavorite: (() -> Unit)? = null
 ) {
     var isFocused by remember { mutableStateOf(false) }
 
@@ -414,23 +422,43 @@ fun ChannelCard(
                 )
             }
 
-            // Top Right: LIVE Indicator Pill
-            if (channel.isLive) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(6.dp)
-                        .background(LiveIndicatorRed, RoundedCornerShape(2.dp))
-                        .padding(horizontal = 5.dp, vertical = 1.5.dp)
-                ) {
-                    Text(
-                        text = "LIVE",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 8.5.sp,
-                            fontWeight = FontWeight.Black,
-                            color = Color.White
+            // Top Right: LIVE Indicator Pill or Favorite
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (channel.isLive) {
+                    Box(
+                        modifier = Modifier
+                            .background(LiveIndicatorRed, RoundedCornerShape(2.dp))
+                            .padding(horizontal = 5.dp, vertical = 1.5.dp)
+                    ) {
+                        Text(
+                            text = "LIVE",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 8.5.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color.White
+                            )
                         )
-                    )
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+
+                if (onToggleFavorite != null) {
+                    IconButton(
+                        onClick = onToggleFavorite,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (channel.isFavorite) Icons.Default.Star else Icons.Outlined.StarBorder,
+                            contentDescription = "Toggle favorite",
+                            tint = if (channel.isFavorite) TextPrimaryWhite else TextMutedGraphite,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
         }

@@ -125,17 +125,6 @@ fun ChannelItemRow(
 ) {
     var isFocused by remember { mutableStateOf(false) }
 
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(900, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "liveAlpha"
-    )
-
     val backgroundColor = when {
         isFocused -> SurfaceGraphite28
         isSelected -> SurfaceGraphite1E
@@ -292,7 +281,7 @@ fun ChannelItemRow(
         if (channel.isLive) {
             Box(
                 modifier = Modifier
-                    .background(LiveIndicatorRed.copy(alpha = pulseAlpha), RoundedCornerShape(2.dp))
+                    .background(LiveIndicatorRed, RoundedCornerShape(2.dp))
                     .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
                 Text(
